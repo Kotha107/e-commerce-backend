@@ -1,45 +1,38 @@
 import { Request,Response } from "express";
-import { bucket } from "../config/firebase";
-import { v4 as uuidv4} from "uuid";
+import axios  from "axios";
+import FormData from "form-data";
 
-export async function uploadImage(req: Request, res:Response) {
-    try {
+
+
+export async function uploadImage( req:Request, res:Response){
+    try{
         if(!req.file){
-             return res.status(400).json({ error: "No file uploaded" });
+            return res.status(400).json({error:"No file uploaded"});
         }
 
-        const filename = `products/${Date.now()}_${uuidv4}`;
-        const file = bucket.file(filename)
+        const apiKey = process.env.IMGBB_API_KEY;
+        if(!apiKey){
+            return res.status(500).json({ error: "ImgBB API key not configured"});
 
-        const stream = file.createWriteStream({
-            metadata:{
-                contentType:req.file.mimetype,
-                metadata:{
-                    firebaseStorageDownloadTokens: uuidv4()
-             }
-            } 
-        });
+        }
+        const form = new FormData();
+        form.append("image",req.file.buffer.toString("base64"));
 
-          stream.on("error", () =>
-             res.status(500).json({ error: "Upload failed" })
-         );
+        const url = `https://api.imgbb.com/1/upload?key=${apiKey}`;
+        const response = await axios.post(url,form,{ headers: form.getHeaders() } );
 
-          stream.on("finish", async () => {
-                const token = file?.metadata?.metadata?.firebaseStorageDownloadTokens;
+        const data = response.data;
+        if(!data || !data.success){
+            return res.status(500).json({ error: "ImgBB upload failed", details: data });
+    }
 
-            const publicUrl =
-                `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filename)}?alt=media&token=${token}`;
+    const imageUrl = data.data.url;
+    const deleteUrl = data.data.deleteUrl
 
-                    res.json({
-                        message: "Upload successful",
-                        imageUrl: publicUrl,
-                        storagePath: filename
-                    });
-    });
-            stream.end(req.file.buffer);
-} catch (err) {
-    res.status(500).json({ error: "Server error" });
+    return res.json({imageUrl,deleteUrl,raw:data})
+    }
+    catch (err: any) {
+    console.error("ImgBB upload error:", err.response?.data || err.message || err);
+    return res.status(500).json({ error: "Upload failed", details: err.response?.data || err.message });
   }
-    
-    
 }

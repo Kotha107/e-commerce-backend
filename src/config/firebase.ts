@@ -7,8 +7,7 @@ dotenv.config();
 const serviceAccountPath = path.resolve("serviceAccountKey.json");
 
 admin.initializeApp({
-    credential:admin.credential.cert(serviceAccountPath),
-    storageBucket: process.env.FIREBASE_BUCKET
+    credential:admin.credential.cert(serviceAccountPath)
 });
 
-export const bucket =admin.storage().bucket();
+export const db= admin.firestore();
