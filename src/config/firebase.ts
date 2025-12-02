@@ -7,7 +7,7 @@ dotenv.config();
 const serviceAccountPath = path.resolve("serviceAccountKey.json");
 
 admin.initializeApp({
-    credential:admin.credential.cert(serviceAccountPath)
+  credential: admin.credential.cert(serviceAccountPath),
 });
 
-export const db= admin.firestore();
+export const db = admin.firestore();
