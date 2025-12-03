@@ -4,7 +4,7 @@ import { db } from "../config/firebase";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../utils/response.util";
-import { ProductDetails } from "../models/product.model";
+import { ProductDetailsModel } from "../models/product.model";
 export async function uploadImage(req: Request, res: Response) {
   try {
     if (!req.file) {
@@ -21,9 +21,7 @@ export async function uploadImage(req: Request, res: Response) {
     form.append("image", req.file.buffer.toString("base64"));
 
     const url = process.env.url || "";
-    const response = await axios.post(url, form, {
-      headers: form.getHeaders(),
-    });
+    const response = await axios.post(url, form);
 
     const data = response.data;
     if (!data || !data.success) {
@@ -37,31 +35,34 @@ export async function uploadImage(req: Request, res: Response) {
       );
     }
 
-    // const imageUrl = data.data.url;
-    // const deleteUrl = data.data.deleteUrl
+    const imageUrl = data.data.url;
+    const deleteUrl = data.data.deleteUrl;
     const msg = "Image uploaded successfully";
-    return sendResponse(res, msg, true, StatusCodes.OK, data);
-  } catch (err: any) {
-    console.error(
-      "ImgBB upload error:",
-      err.response?.data || err.message || err
-    );
-    return res.status(500).json({
-      error: "Upload failed",
-      details: err.response?.data || err.message,
+    return sendResponse(res, msg, true, StatusCodes.OK, {
+      deleteUrl,
+      imageUrl,
     });
+  } catch (err) {
+    return sendResponse(
+      res,
+      "Upload failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      err
+    );
   }
 }
 
 export async function createProduct(req: Request, res: Response) {
   try {
     const { name, price, category, description, imageUrl } = req.body;
+    console.log("Received product data:", req.body);
     if (!name || !price || !imageUrl) {
       const msg = "name, price, and imageUrl are required";
       return sendResponse(res, msg, false, StatusCodes.BAD_REQUEST);
     }
 
-    const Product: ProductDetails = {
+    const product: ProductDetailsModel = {
       name,
       price,
       category: category || "uncategorized",
@@ -69,28 +70,22 @@ export async function createProduct(req: Request, res: Response) {
       imageUrl: imageUrl || "",
       createdAt: new Date(),
     };
+    console.log("Saving product to database:", product);
 
-    const docRef = await db.collection("products").add({
-      name,
-      price,
-      category: category || "uncategorized",
-      description: description || "",
-      imageUrl,
-      createdAt: new Date(),
-    });
-
+    const docRef = await db.collection("products").add(product);
     const saved = await docRef.get();
+
     return sendResponse(
       res,
       "Product created successfully",
       true,
-      StatusCodes.OK,
-      { id: docRef.id, ...saved.data() }
+      StatusCodes.OK
     );
   } catch (err) {
+    console.log("Error creating product:", err);
     return sendResponse(
       res,
-      "Create product failed",
+      "Product creation failed",
       false,
       StatusCodes.INTERNAL_SERVER_ERROR,
       err

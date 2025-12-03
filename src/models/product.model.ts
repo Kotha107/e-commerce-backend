@@ -1,4 +1,4 @@
-export interface ProductDetails {
+export interface ProductDetailsModel {
   name: string;
   price: number;
   category: string;   

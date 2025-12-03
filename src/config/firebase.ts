@@ -1,13 +1,11 @@
 import admin from "firebase-admin";
 import dotenv from "dotenv";
-import path from "path";
+import serviceAccount from "../../serviceAccountKey.json" ;
 
 dotenv.config();
 
-const serviceAccountPath = path.resolve("serviceAccountKey.json");
-
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccountPath),
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
 });
 
 export const db = admin.firestore();
