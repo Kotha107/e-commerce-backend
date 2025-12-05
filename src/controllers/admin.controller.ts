@@ -56,7 +56,6 @@ export async function uploadImage(req: Request, res: Response) {
 export async function createProduct(req: Request, res: Response) {
   try {
     const { name, price, category, description, imageUrl } = req.body;
-    console.log("Received product data:", req.body);
     if (!name || !price || !imageUrl) {
       const msg = "name, price, and imageUrl are required";
       return sendResponse(res, msg, false, StatusCodes.BAD_REQUEST);
@@ -70,16 +69,22 @@ export async function createProduct(req: Request, res: Response) {
       imageUrl: imageUrl || "",
       createdAt: new Date(),
     };
-    console.log("Saving product to database:", product);
 
     const docRef = await db.collection("products").add(product);
-    const saved = await docRef.get();
+    const savedSnap = await docRef.get();
+    const savedData = savedSnap.exists ? savedSnap.data() : null;
+
+    const responsePayload = {
+      id: docRef.id,
+      ...(savedData || {}),
+    };
 
     return sendResponse(
       res,
       "Product created successfully",
       true,
-      StatusCodes.OK
+      StatusCodes.OK,
+      responsePayload
     );
   } catch (err) {
     console.log("Error creating product:", err);
@@ -99,12 +104,49 @@ export async function allProducts(req: Request, res: Response) {
       .collection("products")
       .orderBy("createdAt", "desc")
       .get();
-    const products = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const products = snap.docs.map((d) => {
+      const data = d.data();
+      let createdAt: any = data?.createdAt ?? null;
+
+      // Convert Firestore Timestamp (or Date) to ISO string for safe JSON transport
+      if (createdAt && typeof (createdAt as any).toDate === "function") {
+        createdAt = (createdAt as any).toDate().toISOString();
+      } else if (createdAt instanceof Date) {
+        createdAt = createdAt.toISOString();
+      }
+
+      return { id: d.id, ...data, createdAt };
+    });
+
     return sendResponse(res, "Success", true, StatusCodes.OK, products);
   } catch (err) {
     return sendResponse(
       res,
       "List Failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+export async function deleteProduct(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      const msg = "Product Id is required";
+      return sendResponse(res, msg, false, StatusCodes.BAD_REQUEST);
+    }
+    await db.collection("products").doc(id).delete();
+    return sendResponse(
+      res,
+      "Product deleted Successfully",
+      true,
+      StatusCodes.OK
+    );
+  } catch (err) {
+    return sendResponse(
+      res,
+      "Something went wrong",
       false,
       StatusCodes.INTERNAL_SERVER_ERROR
     );
