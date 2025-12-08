@@ -6,6 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../utils/response.util";
 import { ProductDetailsModel } from "../models/product.model";
 export async function uploadImage(req: Request, res: Response) {
+  const { categoryId } = req.body;
   try {
     if (!req.file) {
       const msg = "No file uploaded";
@@ -39,6 +40,7 @@ export async function uploadImage(req: Request, res: Response) {
     const deleteUrl = data.data.deleteUrl;
     const msg = "Image uploaded successfully";
     return sendResponse(res, msg, true, StatusCodes.OK, {
+      categoryId,
       deleteUrl,
       imageUrl,
     });
@@ -55,16 +57,34 @@ export async function uploadImage(req: Request, res: Response) {
 
 export async function createProduct(req: Request, res: Response) {
   try {
-    const { name, price, category, description, imageUrl } = req.body;
+    const { name, price, categoryName, description, imageUrl } = req.body;
     if (!name || !price || !imageUrl) {
       const msg = "name, price, and imageUrl are required";
       return sendResponse(res, msg, false, StatusCodes.BAD_REQUEST);
     }
 
+    const categorySnap = await db
+      .collection("categories")
+      .where("name", "==", categoryName)
+      .limit(1)
+      .get();
+      console.log("Category snapshot:", categorySnap.empty ? "No category found" : "Category exists");
+
+    let categoryId = "";
+
+    if (!categorySnap.empty) {
+      categoryId = categorySnap.docs[0].id;
+    } else {
+      const newCategoryRef = await db.collection("categories").add({
+        name: categoryName,
+      });
+      categoryId = newCategoryRef.id;
+    }
+
     const product: ProductDetailsModel = {
       name,
       price,
-      category: category || "uncategorized",
+      categoryId: categoryId,
       description: description || "",
       imageUrl: imageUrl || "",
       createdAt: new Date(),
@@ -87,7 +107,6 @@ export async function createProduct(req: Request, res: Response) {
       responsePayload
     );
   } catch (err) {
-    console.log("Error creating product:", err);
     return sendResponse(
       res,
       "Product creation failed",
