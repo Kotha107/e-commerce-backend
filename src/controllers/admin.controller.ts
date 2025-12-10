@@ -6,7 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../utils/response.util";
 import { ProductDetailsModel } from "../models/product.model";
 export async function uploadImage(req: Request, res: Response) {
-  const { categoryId } = req.body;
+  const { categoryId } = req?.body;
   try {
     if (!req.file) {
       const msg = "No file uploaded";
@@ -24,7 +24,7 @@ export async function uploadImage(req: Request, res: Response) {
     const url = process.env.url || "";
     const response = await axios.post(url, form);
 
-    const data = response.data;
+    const data = response?.data;
     if (!data || !data.success) {
       const msg = "ImgBB upload failed";
       return sendResponse(
@@ -36,8 +36,8 @@ export async function uploadImage(req: Request, res: Response) {
       );
     }
 
-    const imageUrl = data.data.url;
-    const deleteUrl = data.data.deleteUrl;
+    const imageUrl = data?.data?.url;
+    const deleteUrl = data?.data?.deleteUrl;
     const msg = "Image uploaded successfully";
     return sendResponse(res, msg, true, StatusCodes.OK, {
       categoryId,
@@ -68,7 +68,10 @@ export async function createProduct(req: Request, res: Response) {
       .where("name", "==", categoryName)
       .limit(1)
       .get();
-      console.log("Category snapshot:", categorySnap.empty ? "No category found" : "Category exists");
+    console.log(
+      "Category snapshot:",
+      categorySnap.empty ? "No category found" : "Category exists"
+    );
 
     let categoryId = "";
 
@@ -78,7 +81,7 @@ export async function createProduct(req: Request, res: Response) {
       const newCategoryRef = await db.collection("categories").add({
         name: categoryName,
       });
-      categoryId = newCategoryRef.id;
+      categoryId = newCategoryRef?.id;
     }
 
     const product: ProductDetailsModel = {
@@ -95,7 +98,7 @@ export async function createProduct(req: Request, res: Response) {
     const savedData = savedSnap.exists ? savedSnap.data() : null;
 
     const responsePayload = {
-      id: docRef.id,
+      id: docRef?.id,
       ...(savedData || {}),
     };
 
@@ -124,7 +127,7 @@ export async function allProducts(req: Request, res: Response) {
       .orderBy("createdAt", "desc")
       .get();
     const products = snap.docs.map((d) => {
-      const data = d.data();
+      const data = d?.data();
       let createdAt: any = data?.createdAt ?? null;
 
       // Convert Firestore Timestamp (or Date) to ISO string for safe JSON transport
@@ -150,7 +153,7 @@ export async function allProducts(req: Request, res: Response) {
 
 export async function deleteProduct(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const { id } = req?.params;
     if (!id) {
       const msg = "Product Id is required";
       return sendResponse(res, msg, false, StatusCodes.BAD_REQUEST);
