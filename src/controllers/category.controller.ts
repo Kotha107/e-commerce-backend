@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import { db } from "../config/firebase";
 import { StatusCodes } from "http-status-codes";
@@ -8,16 +7,30 @@ export async function createCategory(req: Request, res: Response) {
   try {
     const { name } = req.body;
     if (!name || typeof name !== "string" || name.trim() === "") {
-      return sendResponse(res, "Category name is required", false, StatusCodes.BAD_REQUEST);
+      return sendResponse(
+        res,
+        "Category name is required",
+        false,
+        StatusCodes.BAD_REQUEST
+      );
     }
 
     const nameTrim = name.trim();
 
-    
-    const snap = await db.collection("categories").where("name", "==", nameTrim).limit(1).get();
+    const snap = await db
+      .collection("categories")
+      .where("name", "==", nameTrim)
+      .limit(1)
+      .get();
     if (!snap.empty) {
       const existing = snap.docs[0];
-      return sendResponse(res, "Category already exists", true, StatusCodes.OK, { id: existing.id, ...existing.data() });
+      return sendResponse(
+        res,
+        "Category already exists",
+        true,
+        StatusCodes.OK,
+        { id: existing.id, ...existing.data() }
+      );
     }
 
     const newRef = await db.collection("categories").add({
@@ -26,36 +39,77 @@ export async function createCategory(req: Request, res: Response) {
     });
 
     const newSnap = await newRef.get();
-    return sendResponse(res, "Category created", true, StatusCodes.CREATED, { id: newRef.id, ...(newSnap.data() || {}) });
+    return sendResponse(res, "Category created", true, StatusCodes.CREATED, {
+      id: newRef.id,
+      ...(newSnap.data() || {}),
+    });
   } catch (err) {
-    return sendResponse(res, "Create category failed", false, StatusCodes.INTERNAL_SERVER_ERROR, err);
+    return sendResponse(
+      res,
+      "Create category failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      err
+    );
   }
 }
 
 export async function allCategories(req: Request, res: Response) {
   try {
-    const snap = await db.collection("categories").orderBy("createdAt", "desc").get();
-    const categories = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
+    const snap = await db
+      .collection("categories")
+      .orderBy("createdAt", "desc")
+      .get();
+    const categories = snap.docs.map((data) => ({
+      id: data.id,
+      ...(data.data() || {}),
+    }));
     return sendResponse(res, "Success", true, StatusCodes.OK, categories);
   } catch (err) {
-    return sendResponse(res, "List categories failed", false, StatusCodes.INTERNAL_SERVER_ERROR, err);
+    return sendResponse(
+      res,
+      "List categories failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      err
+    );
   }
 }
 
 export async function deleteCategory(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    if (!id) return sendResponse(res, "Category id required", false, StatusCodes.BAD_REQUEST);
+    if (!id)
+      return sendResponse(
+        res,
+        "Category id required",
+        false,
+        StatusCodes.BAD_REQUEST
+      );
 
-   
-    const productSnap = await db.collection("products").where("categoryId", "==", id).limit(1).get();
+    const productSnap = await db
+      .collection("products")
+      .where("categoryId", "==", id)
+      .limit(1)
+      .get();
     if (!productSnap.empty) {
-      return sendResponse(res, "Cannot delete category: products reference it", false, StatusCodes.CONFLICT);
+      return sendResponse(
+        res,
+        "Cannot delete category: products reference it",
+        false,
+        StatusCodes.CONFLICT
+      );
     }
 
     await db.collection("categories").doc(id).delete();
     return sendResponse(res, "Category deleted", true, StatusCodes.OK);
   } catch (err) {
-    return sendResponse(res, "Delete failed", false, StatusCodes.INTERNAL_SERVER_ERROR, err);
+    return sendResponse(
+      res,
+      "Delete failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      err
+    );
   }
 }
