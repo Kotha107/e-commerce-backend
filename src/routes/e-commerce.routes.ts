@@ -6,11 +6,21 @@ import {
   allProducts,
   deleteProduct,
 } from "../controllers/admin.controller";
+import {
+  allCategories,
+  createCategory,
+  deleteCategory,
+} from "../controllers/category.controller";
 const router = Router();
 
 router.post("/upload", upload.single("image"), uploadImage);
 router.post("/products", createProduct);
 router.get("/products", allProducts);
 router.delete("/products/:id", deleteProduct);
+
+//category
+router.post("/categories", createCategory);
+router.get("/categories", allCategories);
+router.delete("/categories/:id", deleteCategory);
 
 export default router;

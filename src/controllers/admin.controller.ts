@@ -68,20 +68,11 @@ export async function createProduct(req: Request, res: Response) {
       .where("name", "==", categoryName)
       .limit(1)
       .get();
-    console.log(
-      "Category snapshot:",
-      categorySnap.empty ? "No category found" : "Category exists"
-    );
 
     let categoryId = "";
 
     if (!categorySnap.empty) {
       categoryId = categorySnap.docs[0].id;
-    } else {
-      const newCategoryRef = await db.collection("categories").add({
-        name: categoryName,
-      });
-      categoryId = newCategoryRef?.id;
     }
 
     const product: ProductDetailsModel = {
