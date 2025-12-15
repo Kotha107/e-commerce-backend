@@ -68,7 +68,7 @@ export async function allCategories(req: Request, res: Response) {
   } catch (err) {
     return sendResponse(
       res,
-      "List categories failed",
+      "List of categories failed",
       false,
       StatusCodes.INTERNAL_SERVER_ERROR,
       err
