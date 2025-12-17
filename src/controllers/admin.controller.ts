@@ -5,6 +5,9 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../utils/response.util";
 import { ProductDetailsModel } from "../models/product.model";
+
+
+
 export async function uploadImage(req: Request, res: Response) {
   const { categoryId } = req?.body;
   try {

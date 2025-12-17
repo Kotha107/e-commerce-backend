@@ -11,6 +11,8 @@ import {
   createCategory,
   deleteCategory,
 } from "../controllers/category.controller";
+import { createOrGetCustomer } from "../controllers/customer.controller";
+import { createSale } from "../controllers/sale.controller";
 const router = Router();
 
 router.post("/upload", upload.single("image"), uploadImage);
@@ -22,5 +24,11 @@ router.delete("/products/:id", deleteProduct);
 router.post("/categories", createCategory);
 router.get("/categories", allCategories);
 router.delete("/categories/:id", deleteCategory);
+
+//customer
+router.post("/customer",createOrGetCustomer);
+
+//sales
+router.post("/sale", createSale);
 
 export default router;
