@@ -17,7 +17,6 @@ export async function createOrGetCustomer(req: Request, res: Response) {
       );
     }
 
-  
     let snap;
 
     if (phone) {
@@ -34,7 +33,6 @@ export async function createOrGetCustomer(req: Request, res: Response) {
         .get();
     }
 
-    
     if (!snap.empty) {
       const doc = snap.docs[0];
       return sendResponse(res, "Existing customer", true, StatusCodes.OK, {
@@ -43,7 +41,6 @@ export async function createOrGetCustomer(req: Request, res: Response) {
       });
     }
 
-   
     const customer: CustomerModel = {
       name,
       email: email || "",
@@ -63,6 +60,50 @@ export async function createOrGetCustomer(req: Request, res: Response) {
     return sendResponse(
       res,
       "Customer processing failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      err
+    );
+  }
+}
+
+export async function searchCustomer(req: Request, res: Response) {
+  try {
+    const { phone } = req.query; // Use query params for GET request
+
+    if (!phone) {
+      return sendResponse(
+        res,
+        "Phone is required",
+        false,
+        StatusCodes.BAD_REQUEST
+      );
+    }
+
+    const snap = await db
+      .collection("customers")
+      .where("phone", "==", phone)
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      return sendResponse(
+        res,
+        "No customer found",
+        false,
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    const doc = snap.docs[0];
+    return sendResponse(res, "Customer found", true, StatusCodes.OK, {
+      id: doc.id,
+      ...doc.data(),
+    });
+  } catch (err) {
+    return sendResponse(
+      res,
+      "Search failed",
       false,
       StatusCodes.INTERNAL_SERVER_ERROR,
       err

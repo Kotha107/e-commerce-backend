@@ -113,3 +113,65 @@ export async function deleteCategory(req: Request, res: Response) {
     );
   }
 }
+
+export async function updateCategory(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!id) {
+      return sendResponse(
+        res,
+        "Category Id is required",
+        false,
+        StatusCodes.BAD_REQUEST
+      );
+    }
+
+    if (!name || typeof name !== "string" || name.trim() === "") {
+      return sendResponse(
+        res,
+        "Category name is required",
+        false,
+        StatusCodes.BAD_REQUEST
+      );
+    }
+
+    const nameTrim = name.trim();
+
+    const snap = await db
+      .collection("categories")
+      .where("name", "==", nameTrim)
+      .get();
+
+    const duplicate = snap.docs.find((doc) => doc.id !== id);
+    if (duplicate) {
+      return sendResponse(
+        res,
+        "Category name already exists",
+        false,
+        StatusCodes.CONFLICT
+      );
+    }
+
+    await db.collection("categories").doc(id).update({
+      name: nameTrim,
+      updatedAt: new Date(),
+    });
+
+    return sendResponse(
+      res,
+      "Category updated successfully",
+      true,
+      StatusCodes.OK
+    );
+  } catch (err) {
+    return sendResponse(
+      res,
+      "Update category failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      err
+    );
+  }
+}

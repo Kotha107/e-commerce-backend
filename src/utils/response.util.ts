@@ -1,7 +1,6 @@
 import { Response } from "express";
 import { StatusCodes, getReasonPhrase } from "http-status-codes";
 
-
 export async function sendResponse(
   res: Response,
   message: string,

@@ -2,6 +2,9 @@ export interface SaleItem {
   productId: string;
   name: string;
   price: number;
+  unit: string;
+  discountPercent: number;
+  finalPrice: number;
   quantity: number;
 }
 

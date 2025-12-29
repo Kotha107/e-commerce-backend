@@ -1,8 +1,11 @@
 export interface ProductDetailsModel {
   name: string;
   price: number;
-  categoryId: string;   
-  description?: string; 
+  unit?: string;
+  discountPercent?: number;
+  categoryId: string;
+  description?: string;
   imageUrl: string;
   createdAt?: Date;
+  updatedAt?: Date;
 }

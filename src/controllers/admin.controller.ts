@@ -6,8 +6,6 @@ import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../utils/response.util";
 import { ProductDetailsModel } from "../models/product.model";
 
-
-
 export async function uploadImage(req: Request, res: Response) {
   const { categoryId } = req?.body;
   try {
@@ -60,7 +58,15 @@ export async function uploadImage(req: Request, res: Response) {
 
 export async function createProduct(req: Request, res: Response) {
   try {
-    const { name, price, categoryName, description, imageUrl } = req.body;
+    const {
+      name,
+      price,
+      unit,
+      categoryName,
+      description,
+      discountPercent,
+      imageUrl,
+    } = req.body;
     if (!name || !price || !imageUrl) {
       const msg = "name, price, and imageUrl are required";
       return sendResponse(res, msg, false, StatusCodes.BAD_REQUEST);
@@ -81,8 +87,10 @@ export async function createProduct(req: Request, res: Response) {
     const product: ProductDetailsModel = {
       name,
       price,
+      unit: unit || "",
       categoryId: categoryId,
       description: description || "",
+      discountPercent: discountPercent || 0,
       imageUrl: imageUrl || "",
       createdAt: new Date(),
     };
@@ -165,6 +173,71 @@ export async function deleteProduct(req: Request, res: Response) {
       "Something went wrong",
       false,
       StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+export async function updateProduct(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      price,
+      unit,
+      categoryName,
+      description,
+      discountPercent,
+      imageUrl,
+    } = req.body;
+
+    if (!id) {
+      return sendResponse(
+        res,
+        "Product Id is required",
+        false,
+        StatusCodes.BAD_REQUEST
+      );
+    }
+    const categorySnap = await db
+      .collection("categories")
+      .where("name", "==", categoryName)
+      .limit(1)
+      .get();
+
+    let categoryId = "";
+    if (!categorySnap.empty) {
+      categoryId = categorySnap.docs[0].id;
+    }
+
+    const updatedData: ProductDetailsModel = {
+      name,
+      price,
+      unit: unit || "",
+      categoryId: categoryId,
+      description: description || "",
+      discountPercent: discountPercent || 0,
+      imageUrl: imageUrl || "",
+      updatedAt: new Date(),
+    };
+
+    if (imageUrl) {
+      updatedData.imageUrl = imageUrl;
+    }
+
+    await db.collection("products").doc(id).update(updatedData as any);
+
+    return sendResponse(
+      res,
+      "Product updated successfully",
+      true,
+      StatusCodes.OK
+    );
+  } catch (err) {
+    return sendResponse(
+      res,
+      "Product update failed",
+      false,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      err
     );
   }
 }
